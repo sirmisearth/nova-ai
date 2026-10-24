@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#101025">
+<title>NOVA AI</title>
+<style>
+:root{color-scheme:dark;--bg:#0c0c1b;--panel:#15152b;--text:#f6f5ff;--muted:#aaa9c7;--line:#2d2b4a;--purple:#9b6cff;--blue:#4f8cff}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;color:var(--text);background:radial-gradient(ellipse at top left,#28205a 0,transparent 42%),radial-gradient(ellipse at top right,#102e57 0,transparent 35%),var(--bg)}
+.app{max-width:850px;margin:0 auto;min-height:100vh;display:flex;flex-direction:column;padding:18px}header{display:flex;align-items:center;gap:12px;padding:8px 2px 20px;border-bottom:1px solid var(--line)}
+.logo{width:44px;height:44px;border-radius:15px;display:grid;place-items:center;background:linear-gradient(135deg,var(--purple),var(--blue));font-weight:900;font-size:22px}h1{font-size:21px;margin:0;letter-spacing:.4px}.tagline{color:var(--muted);font-size:12px;margin-top:3px}.status{margin-left:auto;color:#a9f4d0;font-size:12px}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#4ade80;margin-right:6px}
+.intro{text-align:center;padding:34px 10px 20px}.intro h2{font-size:clamp(27px,6vw,40px);margin:0 0 10px;line-height:1.15}.gradient{background:linear-gradient(90deg,#b18cff,#68b6ff,#f39dff);-webkit-background-clip:text;background-clip:text;color:transparent}.intro p{color:var(--muted);margin:0 auto;max-width:480px;line-height:1.6}
+.suggestions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:18px 0 20px}.suggestion{border:1px solid var(--line);background:#17172bba;color:var(--text);padding:14px;border-radius:15px;text-align:left;cursor:pointer;line-height:1.4}.suggestion:hover{border-color:var(--purple)}.suggestion small{display:block;color:var(--muted);margin-top:5px}
+#chat{display:flex;flex-direction:column;gap:14px;padding:6px 0 18px}.message{max-width:92%;padding:13px 15px;border-radius:17px;white-space:pre-wrap;line-height:1.55;overflow-wrap:anywhere}.assistant{align-self:flex-start;background:var(--panel);border:1px solid var(--line);border-top-left-radius:5px}.user{align-self:flex-end;background:linear-gradient(135deg,#6746c7,#386bc8);border-top-right-radius:5px}
+.composer-wrap{position:sticky;bottom:0;margin-top:auto;padding-top:12px;background:linear-gradient(transparent,var(--bg) 22%)}form{display:flex;gap:10px;align-items:flex-end;padding:9px;border:1px solid #39365d;background:#17172b;border-radius:20px}textarea{flex:1;resize:none;max-height:150px;min-height:44px;border:0;outline:0;background:transparent;color:var(--text);font:inherit;padding:10px 7px}textarea::placeholder{color:#9290b1}button.send{flex-shrink:0;border:0;border-radius:14px;width:46px;height:44px;background:linear-gradient(135deg,var(--purple),var(--blue));color:white;font-size:20px;cursor:pointer}button:disabled{opacity:.5;cursor:wait}.foot{text-align:center;color:#8987a8;font-size:11px;padding:12px 0 4px}.error{color:#ffb4b4}
+@media(max-width:520px){.app{padding:12px}.suggestions{grid-template-columns:1fr}.intro{padding-top:28px}.status{font-size:10px}}
+</style>
+</head>
+<body><main class="app">
+<header><div class="logo">N</div><div><h1>NOVA AI</h1><div class="tagline">Your curious, creative AI assistant</div></div><div class="status"><span class="dot"></span>Ready to help</div></header>
+<section class="intro" id="intro"><h2>What can we <span class="gradient">create today?</span></h2><p>Ask questions, explore ideas, write, learn, plan, or build something new.</p></section>
+<section class="suggestions" id="suggestions">
+<button class="suggestion" data-prompt="Help me come up with a great app idea.">💡 Find an idea<small>Turn a thought into a plan</small></button>
+<button class="suggestion" data-prompt="Explain a difficult topic in simple words.">🧠 Learn something<small>Clear, simple explanations</small></button>
+<button class="suggestion" data-prompt="Help me write a professional message.">✍️ Write with me<small>Messages, stories and more</small></button>
+<button class="suggestion" data-prompt="Teach me how to build a website as a beginner.">💻 Build a project<small>Step-by-step coding help</small></button>
+</section><section id="chat" aria-live="polite"></section>
+<div class="composer-wrap"><form id="form"><textarea id="prompt" placeholder="Message NOVA AI..." rows="1" aria-label="Message NOVA AI"></textarea><button class="send" id="send" type="submit" aria-label="Send message">➤</button></form><div class="foot">NOVA AI can make mistakes. Check important information.</div></div>
+</main>
+<script>
+const form=document.getElementById('form'),input=document.getElementById('prompt'),send=document.getElementById('send'),chat=document.getElementById('chat'),intro=document.getElementById('intro'),suggestions=document.getElementById('suggestions'),history=[];
+function addMessage(text,role){const node=document.createElement('div');node.className='message '+role;node.textContent=text;chat.appendChild(node);node.scrollIntoView({behavior:'smooth',block:'end'});return node}
+async function sendMessage(message){const text=(message||'').trim();if(!text||send.disabled)return;intro.style.display='none';suggestions.style.display='none';addMessage(text,'user');history.push({role:'user',content:text});input.value='';input.style.height='auto';send.disabled=true;const waiting=addMessage('Thinking…','assistant');
+try{const response=await fetch('/api/chat',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({message:text,history:history.slice(-12)})});const data=await response.json().catch(()=>({}));if(!response.ok)throw new Error(data.error||('Request failed ('+response.status+').'));const reply=data.reply||data.response||data.message||'I received a response, but it was empty.';waiting.textContent=reply;history.push({role:'assistant',content:reply})}
+catch(err){waiting.textContent='I couldn’t reach the AI service. Check that the backend is running and its Gemini API key is configured. Details: '+err.message;waiting.classList.add('error')}
+finally{send.disabled=false;input.focus()}}
+form.addEventListener('submit',e=>{e.preventDefault();sendMessage(input.value)});input.addEventListener('input',()=>{input.style.height='auto';input.style.height=Math.min(input.scrollHeight,150)+'px'});input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey){e.preventDefault();form.requestSubmit()}});document.querySelectorAll('[data-prompt]').forEach(btn=>btn.addEventListener('click',()=>sendMessage(btn.dataset.prompt)));
+</script></body></html>
